@@ -1,89 +1,178 @@
 from Asset import Asset, Stock, Cryptocurrency
-import json
-import requests
-from bs4 import BeautifulSoup
+import sys
+from scrapers import parseCrypto, parseStock
+from tabulate import tabulate
+from pyfiglet import Figlet
+
+stocks_obj = []
+crypto_obj = []
+
+width = 132
+
+# For tabulation purposes
+stocks_dict = []
+crypto_dict = []
 
 def main():
+    main_wallet()
+        
+def get_state():
+    state = input("Go to: ")
+    return int(state)
 
-    ticker = input("Ticker: ")
-    symbol, name, open, high, low, close, cirucalting_supply, market_cap, coin_url = parseCrypto(ticker)
-    crypto = Cryptocurrency(symbol, name, open, high, low, close, cirucalting_supply, market_cap, coin_url)
-    print(crypto)
+def main_wallet():
+
+    print("WALLET")
+    print("Balance: ")
+    print("1. Assets")
+    print("2. Exit")
+
+    wallet_state = get_state()
+
+    match wallet_state:
+        case 1:
+            main_assets()
+        case 2:
+            sys.exit("Exiting...")
+        
+def main_assets():
+    asset_state = 0
+
+    print("ASSETS")
+    print(f"Value: ${Asset._total_value}")
+    print("1. Stocks")
+    print("2. Cryptocurrency")
+    print("3. View All")
+    print("4. Back")
+
+    asset_state = get_state()
+
+    match asset_state:
+        case 1:
+            sub_stocks()
+        case 2:
+            sub_crypto()
+        case 3:
+            asset_view_all()
+        case 4:
+            main_wallet()
+
+def asset_view_all():
+    ...
+
+def sub_stocks():
     
+    print("+" + "-"*width + "+")
+    print("|" + " "*63 + "STOCKS" + " "*63 + "|")
     
-def parseStock(ticker):
+    if stocks_obj:
+        print(tabulate(stocks_dict, headers="keys", tablefmt="grid", numalign="center"))
+        str = f"Total Value: ${Asset._stocks_value}"
+        pad = int(len(str)/2)
+        print("|" + " "*(66-pad) + f"{str}" + " "*(66-pad) + "|")
+    print("+" + "-"*width + "+")
 
-    # Download webpage using requests
-    URL = f"http://eoddata.com/stocklist/NASDAQ/{ticker[0]}.htm"
-    response = requests.get(URL)
-    # Retrieve the HTML document
-    page_contents = response.text
+    print("1. Buy")
+    print("2. Sell")
+    print("3. Back")
 
-    ## Parse the HTML code using BeautifulSoup library and extract the desired information
-    doc = BeautifulSoup(page_contents, 'html.parser')
+    stock_state = get_state()
 
-    tr_parent_ro = doc.find_all('tr',{'class':'ro'}) 
-    tr_parent_re = doc.find_all('tr',{'class':'re'})
+    match stock_state:
+        case 1: # Buy
+            ticker = input("Ticker: ")
 
-    for i in range(len(tr_parent_ro)): # Search ro class
-        td_child_ro = tr_parent_ro[i].find_all('td') # Gets the necessary information
-        symbol = td_child_ro[0].find('a').text.strip()
-        if symbol == ticker:
-            name = td_child_ro[1].text.strip()
-            high = td_child_ro[2].text.strip()
-            low = td_child_ro[3].text.strip()
-            close = td_child_ro[4].text.strip()
-            volume = td_child_ro[5].text.strip().replace(',', '') # Here we remove the comma
-            url = "http://eoddata.com/" + td_child_ro[0].find('a')['href'] # Here we append the base url
-            return symbol, name, high, low, close, volume, url
+            # Check for existing stocks
+            for stock in stocks_obj:
+                if stock.symbol == ticker:
+                    print(stock)
+                    amount = int(input("Amount: "))
+                    stock.buy(amount)
+                    for index in stocks_dict:
+                        if index["Symbol"] == ticker:
+                            index.update({"Quantity":stock.amount, "Value":stock.value})
+                            sub_stocks()
 
-    for j in range(len(tr_parent_re)):
-        td_child_re = tr_parent_re[j].find_all('td') # Gets the necessary information
-        symbol = td_child_re[0].find('a').text.strip()
-        if symbol == ticker:
-            name = td_child_re[1].text.strip()
-            high = td_child_re[2].text.strip()
-            low = td_child_re[3].text.strip()
-            close = td_child_re[4].text.strip()
-            volume = td_child_re[5].text.strip().replace(',', '') # Here we remove the comma
-            url = "http://eoddata.com/" + td_child_re[0].find('a')['href'] # Here we append the base url
-            return symbol, name, high, low, close, volume, url
+            # Create a new stock
+            symbol, name, high, low, close, volume, url = parseStock(ticker)
+            stock = Stock(symbol, name, high, low, close, volume, url)
+            print(stock)
+            amount = int(input("Amount: "))
+            stock.buy(amount)
+            stocks_obj.append(stock)
+            stocks_dict.append({"Symbol": stock.symbol, "Name":stock.name, "High": stock.high, "Low":stock.low, "Close":stock.close, "Volume":stock.volume, "Quantity":stock.amount, "Value":stock.value, "URL":stock.url})
+            sub_stocks()
 
-    #ticker = input("Ticker: ")
-    #_symbol, _name, _high, _low, _close, _volume, _url = parseStock(ticker)
-    #stock1 = Stock(_symbol, _name, _high, _low, _close, _volume, _url)
+        case 2: #Sell
+            ticker = input("Ticker: ")
+            # Check for existing stocks
+            for stock in stocks_obj:
+                if stock.symbol == ticker:
+                    amount = int(input("Amount: "))
+                    stock.sell(amount)
+                    for index in stocks_dict:
+                        if index["Symbol"] == ticker:
+                            index.update({"Quantity":stock.amount, "Value":stock.value})
+                            sub_stocks()
+            
+            print("You have no such stock...")
+            sub_stocks()
+        case 3:
+            main_assets()
 
-    #print("Amount: ", stock1.amount)
-    #stock1.buy(10)
-    #print("Amount: ", stock1.amount)
-    #print("Value: ", stock1.value)
-    #stock1.sell(5)
-    #print("Amount: ", stock1.amount)
-    #print("Value: ", stock1.value)
-    #print(Asset._total_value)
-    #print(Asset._asset_count)
-                
-    return "No ticker found"
-
-def parseCrypto(ticker):
+def sub_crypto():
     
-    URL = f"https://production.api.coindesk.com/v2/tb/price/ticker?assets={ticker}"
-    response = requests.get(URL)
-    json_data = response.json()
+    print("Cryptocurrency")
+    print(tabulate(stocks_dict, headers="keys", tablefmt="grid"))
 
-    coin_data = json_data['data'][ticker]
-    symbol = coin_data['iso'],
-    name = coin_data['name'],
-    open = coin_data['ohlc']['o']
-    high = coin_data['ohlc']['h']
-    low = coin_data['ohlc']['l']
-    close = coin_data['ohlc']['c']
-    cirucalting_supply = coin_data['circulatingSupply']
-    market_cap = coin_data['marketCap']
+    print(f"Value: ${Asset._stocks_value}")
+    print("1. Buy")
+    print("2. Sell")
+    print("3. Back")
+
+    stock_state = get_state()
+
+    match stock_state:
+        case 1: # Buy
+            ticker = input("Ticker: ")
+
+            # Check for existing stocks
+            for stock in stocks_obj:
+                if stock.symbol == ticker:
+                    print(stock)
+                    amount = int(input("Amount: "))
+                    stock.buy(amount)
+                    for index in stocks_dict:
+                        if index["Symbol"] == ticker:
+                            index.update({"Quantity":stock.amount, "Value":stock.value})
+                            sub_stocks()
+
+            # Create a new stock
+            symbol, name, high, low, close, volume, url = parseStock(ticker)
+            stock = Stock(symbol, name, high, low, close, volume, url)
+            print(stock)
+            amount = int(input("Amount: "))
+            stock.buy(amount)
+            stocks_obj.append(stock)
+            stocks_dict.append({"Symbol": stock.symbol, "Name":stock.name, "High": stock.high, "Low":stock.low, "Close":stock.close, "Volume":stock.volume, "Quantity":stock.amount, "Value":stock.value, "URL":stock.url})
+            sub_stocks()
+
+        case 2: #Sell
+            ticker = input("Ticker: ")
+            # Check for existing stocks
+            for stock in stocks_obj:
+                if stock.symbol == ticker:
+                    amount = int(input("Amount: "))
+                    stock.sell(amount)
+                    for index in stocks_dict:
+                        if index["Symbol"] == ticker:
+                            index.update({"Quantity":stock.amount, "Value":stock.value})
+                            sub_stocks()
+            
+            print("You have no such stock...")
+            sub_stocks()
+        case 3:
+            main_assets()
     
-    coin_url = f"https://www.coindesk.com/price/{name[0].lower().replace(' ', '-')}/"
-
-    return symbol[0], name[0], open, high, low, close, cirucalting_supply, market_cap, coin_url
-
 if __name__ == "__main__":
     main()

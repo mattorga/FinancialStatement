@@ -1,13 +1,8 @@
 class Asset:
-    _asset_count = 0 
-    _total_value = 0
-
-    @property
-    def value(self):
-        return Asset._total_value
-    @property
-    def asset_count(self):
-        return Asset._asset_count  
+    _asset_count = 0
+    _stocks_value = 0
+    _crypto_value = 0
+    _total_value = _stocks_value + _crypto_value
 
 class Stock(Asset):
     def __init__(self, symbol, name, high, low, close, volume, url=0):
@@ -22,18 +17,24 @@ class Stock(Asset):
         self.amount = 0
         Asset._asset_count += 1  # Increment asset count on object creation
     
+    def __str__(self):
+        str = "Type: {}\nSymbol: {}\nName: {}\nHigh: ${}\nLow: ${}\nClose: ${}\nVolume: {}\nURL: {}".format(self.type, self.symbol, self.name, self.high, self.low, self.close, int(self.volume), self.url)
+        return str
 
     def buy(self, n):
-        self.amount += n
-        value_bought = int(n * float(self.close))
+        self.amount += float(n)
+        value_bought = int(n) * float(self.close)
+        Asset._stocks_value += value_bought
         Asset._total_value += value_bought
+
     def sell(self, n):
         if self.amount < n:
             return "Invalid amounts to sell"
         self.amount -= n
         value_sold = int(n * float(self.close))
+        Asset._stocks_value -= value_sold
         Asset._total_value -= value_sold
-            
+
     @property
     def amount(self):
         return self._amount
@@ -67,12 +68,14 @@ class Cryptocurrency(Asset):
     def buy(self, n):
         self.amount += n
         value_bought = int(n * float(self.close))
+        Asset._crypto_value += value_bought
         Asset._total_value += value_bought
     def sell(self, n):
         if self.amount < n:
             return "Invalid amounts to sell"
         self.amount -= n
         value_sold = int(n * float(self.close))
+        Asset._crypto_value -= value_sold
         Asset._total_value -= value_sold
             
     @property
