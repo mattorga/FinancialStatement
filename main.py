@@ -17,7 +17,7 @@ def main():
     main_wallet()
         
 def get_state():
-    state = input("Go to: ")
+    state = input("Action: ")
     return int(state)
 
 def main_wallet():
@@ -122,55 +122,61 @@ def sub_stocks():
 
 def sub_crypto():
     
-    print("Cryptocurrency")
-    print(tabulate(stocks_dict, headers="keys", tablefmt="grid"))
+    print("+" + "-"*width + "+")
+    print("|" + " "*59 + "CRYPTOCURRENCY" + " "*59 + "|")
+    
+    if crypto_obj:
+        print(tabulate(crypto_dict, headers="keys", tablefmt="grid", numalign="center"))
+        str = f"Total Value: ${Asset._crypto_value}"
+        pad = int(len(str)/2)
+        print("|" + " "*(66-pad) + f"{str}" + " "*(66-pad) + "|")
+    print("+" + "-"*width + "+")
 
-    print(f"Value: ${Asset._stocks_value}")
     print("1. Buy")
     print("2. Sell")
     print("3. Back")
 
-    stock_state = get_state()
+    crypto_state = get_state()
 
-    match stock_state:
+    match crypto_state:
         case 1: # Buy
             ticker = input("Ticker: ")
 
             # Check for existing stocks
-            for stock in stocks_obj:
-                if stock.symbol == ticker:
-                    print(stock)
+            for crypto in crypto_obj:
+                if crypto.symbol == ticker:
+                    print(crypto)
                     amount = int(input("Amount: "))
-                    stock.buy(amount)
-                    for index in stocks_dict:
+                    crypto.buy(amount)
+                    for index in crypto_dict:
                         if index["Symbol"] == ticker:
-                            index.update({"Quantity":stock.amount, "Value":stock.value})
+                            index.update({"Quantity":crypto.amount, "Value":crypto.value})
                             sub_stocks()
 
             # Create a new stock
-            symbol, name, high, low, close, volume, url = parseStock(ticker)
-            stock = Stock(symbol, name, high, low, close, volume, url)
-            print(stock)
+            symbol, name, open, high, low, close, circulating_supply, market_cap, coin_url = parseCrypto(ticker)
+            crypto = Cryptocurrency(symbol, name, open, high, low, close, circulating_supply, market_cap, coin_url)
+            print(crypto)
             amount = int(input("Amount: "))
-            stock.buy(amount)
-            stocks_obj.append(stock)
-            stocks_dict.append({"Symbol": stock.symbol, "Name":stock.name, "High": stock.high, "Low":stock.low, "Close":stock.close, "Volume":stock.volume, "Quantity":stock.amount, "Value":stock.value, "URL":stock.url})
-            sub_stocks()
+            crypto.buy(amount)
+            crypto_obj.append(crypto)
+            crypto_dict.append({"Symbol": crypto.symbol, "Name":crypto.name, "High": crypto.high, "Low":crypto.low, "Close":crypto.close, "Volume":int(crypto.circulating_supply), "Quantity":crypto.amount, "Value":crypto.value, "URL":crypto.url})
+            sub_crypto()
 
         case 2: #Sell
             ticker = input("Ticker: ")
-            # Check for existing stocks
-            for stock in stocks_obj:
-                if stock.symbol == ticker:
+            # Check for existing cryptocurrency
+            for crypto in crypto_obj:
+                if crypto.symbol == ticker:
                     amount = int(input("Amount: "))
-                    stock.sell(amount)
-                    for index in stocks_dict:
+                    crypto.sell(amount)
+                    for index in crypto_dict:
                         if index["Symbol"] == ticker:
-                            index.update({"Quantity":stock.amount, "Value":stock.value})
-                            sub_stocks()
+                            index.update({"Quantity":crypto.amount, "Value":crypto.value})
+                            sub_crypto()
             
             print("You have no such stock...")
-            sub_stocks()
+            sub_crypto()
         case 3:
             main_assets()
     

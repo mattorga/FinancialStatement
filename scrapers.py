@@ -54,9 +54,9 @@ def parseCrypto(ticker):
     high = coin_data['ohlc']['h']
     low = coin_data['ohlc']['l']
     close = coin_data['ohlc']['c']
-    cirucalting_supply = coin_data['circulatingSupply']
+    circulating_supply = coin_data['circulatingSupply']
     market_cap = coin_data['marketCap']
     
     coin_url = f"https://www.coindesk.com/price/{name[0].lower().replace(' ', '-')}/"
 
-    return symbol[0], name[0], open, high, low, close, cirucalting_supply, market_cap, coin_url
+    return symbol[0], name[0], open, high, low, close, circulating_supply, market_cap, coin_url

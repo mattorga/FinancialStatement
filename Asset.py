@@ -52,6 +52,7 @@ class Cryptocurrency(Asset):
         self.type = "Cryptocurrency"
         self.symbol = symbol
         self.name = name
+        self.open = open
         self.high = high
         self.low = low
         self.close = close
