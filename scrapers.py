@@ -1,17 +1,17 @@
-import json
 import requests
 from bs4 import BeautifulSoup
 
 def parseStock(ticker):
     # Download webpage using requests
     URL = f"http://eoddata.com/stocklist/NASDAQ/{ticker[0]}.htm"
+
     response = requests.get(URL)
     # Retrieve the HTML document
     page_contents = response.text
 
     ## Parse the HTML code using BeautifulSoup library and extract the desired information
     doc = BeautifulSoup(page_contents, 'html.parser')
-
+    
     tr_parent_ro = doc.find_all('tr',{'class':'ro'}) 
     tr_parent_re = doc.find_all('tr',{'class':'re'})
 
@@ -59,4 +59,4 @@ def parseCrypto(ticker):
     
     coin_url = f"https://www.coindesk.com/price/{name[0].lower().replace(' ', '-')}/"
 
-    return symbol[0], name[0], open, high, low, close, circulating_supply, market_cap, coin_url
+    return symbol[0], name[0], high, low, close, circulating_supply, market_cap, coin_url

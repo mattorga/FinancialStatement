@@ -9,27 +9,22 @@ class Stock(Asset):
         self.type = "Stock"
         self.symbol = symbol
         self.name = name
-        self.high = high
-        self.low = low
-        self.close = close
-        self.volume = volume
+        self.high = float(high)
+        self.low = float(low)
+        self.close = float(close)
+        self.volume = int(volume)
         self.url = url
-        self.amount = 0
+        self.amount = int(0)
         Asset._asset_count += 1  # Increment asset count on object creation
-    
-    def __str__(self):
-        str = "Type: {}\nSymbol: {}\nName: {}\nHigh: ${}\nLow: ${}\nClose: ${}\nVolume: {}\nURL: {}".format(self.type, self.symbol, self.name, self.high, self.low, self.close, int(self.volume), self.url)
-        return str
 
     def buy(self, n):
         self.amount += float(n)
         value_bought = int(n) * float(self.close)
         Asset._stocks_value += value_bought
         Asset._total_value += value_bought
-
     def sell(self, n):
-        if self.amount < n:
-            return "Invalid amounts to sell"
+        if self.amount < n or not isinstance(n, int):
+            raise ValueError()
         self.amount -= n
         value_sold = int(n * float(self.close))
         Asset._stocks_value -= value_sold
@@ -37,34 +32,28 @@ class Stock(Asset):
 
     @property
     def amount(self):
-        return self._amount
+        return int(self._amount)
     @amount.setter
     def amount(self, amount):
         self._amount = amount
     
     @property
     def value(self):
-        value = int(self._amount*float(self.close))
-        return f"${value}"
+        return float(self._amount*self.close) 
 
 class Cryptocurrency(Asset):
-    def __init__(self, symbol, name, open, high, low, close, circulating_supply, market_cap, url="None"):
+    def __init__(self, symbol, name, high, low, close, circulating_supply, market_cap, url="None"):
         self.type = "Cryptocurrency"
         self.symbol = symbol
         self.name = name
-        self.open = open
-        self.high = high
-        self.low = low
-        self.close = close
-        self.circulating_supply = circulating_supply
-        self.market_cap = market_cap
+        self.high = float(high)
+        self.low = float(low)
+        self.close = float(close)
+        self.circulating_supply = int(circulating_supply)
+        self.market_cap = float(market_cap)
         self.url = url
         self.amount = 0
         Asset._asset_count += 1  # Increment asset count on object creation
-    
-    def __str__(self):
-        str = "Type: {}\nSymbol: {}\nName: {}\nHigh: ${}\nLow: ${}\nClose: ${}\nCirculating Supply: {}\nMarket Cap: {}\nURL: {}".format(self.type, self.symbol, self.name, self.high, self.low, self.close, int(self.circulating_supply), int(self.market_cap), self.url)
-        return str
 
     def buy(self, n):
         self.amount += n
@@ -89,4 +78,4 @@ class Cryptocurrency(Asset):
     @property
     def value(self):
         value = int(self._amount*float(self.close))
-        return f"${value}"
+        return value
