@@ -1,9 +1,13 @@
 from Asset import Asset, Stock, Cryptocurrency
 import sys
-from scrapers import parseCrypto, parseStock
-from tabulate import tabulate
-from prettytable import PrettyTable 
+try: 
+    from prettytable import PrettyTable
+except:
+    pass
+
 import time
+import requests
+from bs4 import BeautifulSoup
 
 stocks_obj = []
 crypto_obj = []
@@ -11,17 +15,18 @@ crypto_obj = []
 def main():
     main_assets()
         
-def get_state():
-   while True:
-        choice = int(input("Action: "))
-        try:
-            if  choice > 3:
-                raise ValueError()
-            else:
-                return choice
-        except (ValueError):
-            pass
-            
+def check_state(choice):
+    try: 
+        choice = int(choice)
+        if  choice < 1 or choice > 3:
+            raise ValueError()
+        else:
+            return choice
+    except ValueError:
+        print("Out-of-range or non-number input...")
+        time.sleep(1)
+        raise
+   
 def main_assets():
     asset_state = 0
 
@@ -46,7 +51,14 @@ def main_assets():
     print("2. Cryptocurrency")
     print("3. Back")
 
-    asset_state = get_state()
+    while True:
+        choice = input("Action: ")
+        try:
+            asset_state = check_state(choice)
+            break
+        except (ValueError, TypeError):
+            pass
+    
 
     match asset_state:
         case 1:
@@ -78,7 +90,14 @@ def sub_stocks():
     print("2. Sell")
     print("3. Back")
 
-    stock_state = get_state()
+    while True:
+        choice = input("Action: ")
+        try:
+            stock_state = check_state(choice)
+            break
+        except (ValueError, TypeError):
+            pass
+    
     table = PrettyTable() 
     match stock_state:
         case 1: # Buy
@@ -100,22 +119,24 @@ def sub_stocks():
             # Creates a new stock
             try:
                 symbol, name, high, low, close, volume, url = parseStock(ticker)
-                stock = Stock(symbol, name, high, low, close, volume, url)
-                table.title = stock.name
-                table.field_names = ["Symbol", "High", "Low", "Close", "Volume", "URL"]
-                table.add_row([stock.symbol, f"{stock.high}", f"{stock.low}", f"{stock.close}", stock.volume, stock.url])
-                print(table)
-
-                amount = -1
-                while amount < 0:
-                    amount = int(input("Amount: "))
-                if amount != 0:
-                    stocks_obj.append(stock)
-                    stock.buy(amount)
             except:
                 print(f"Found no stock with ticker, '{ticker}'.")
                 time.sleep(1)
-        
+                sub_stocks()
+
+            stock = Stock(symbol, name, high, low, close, volume, url)
+            table.title = stock.name
+            table.field_names = ["Symbol", "High", "Low", "Close", "Volume", "URL"]
+            table.add_row([stock.symbol, f"{stock.high}", f"{stock.low}", f"{stock.close}", stock.volume, stock.url])
+            print(table)
+
+            amount = -1
+            while amount < 0:
+                amount = int(input("Amount: "))
+            if amount != 0:
+                stocks_obj.append(stock)
+                stock.buy(amount)
+            
             sub_stocks()
                 
         case 2: #Sell
@@ -171,7 +192,14 @@ def sub_crypto():
     print("2. Sell")
     print("3. Back")
 
-    crypto_state = get_state()
+    while True:
+        choice = input("Action: ")
+        try:
+            crypto_state = check_state(choice)
+            break
+        except (ValueError, TypeError):
+            pass
+
     table = PrettyTable() 
     match crypto_state:
         case 1: # Buy
@@ -192,11 +220,18 @@ def sub_crypto():
 
             # Creates a new stock
 
-            symbol, name,  high, low, close, circulating_supply, market_cap, coin_url = parseCrypto(ticker)
+            try:
+                symbol, name,  high, low, close, circulating_supply, market_cap, coin_url = parseCrypto(ticker)
+            except:
+                print(f"Found no crypto with ticker, '{ticker}'")
+                time.sleep(1)
+                sub_crypto()
+            
             crypto = Cryptocurrency(symbol, name,  high, low, close, circulating_supply, market_cap, coin_url)
             table.title = crypto.name
             table.field_names = ["Symbol", "High", "Low", "Close", "Circulating Supply", "Market Cap", "URL"]
             table.add_row([crypto.symbol, f"${crypto.high:.2f}", f"${crypto.low:.2f}", f"${crypto.close:.2f}", crypto.circulating_supply, f"${crypto.market_cap:.2f}", crypto.url])
+            print(symbol, name,  high, low, close, circulating_supply, market_cap, coin_url)
             print(table)
 
             amount = -1
@@ -205,10 +240,6 @@ def sub_crypto():
             if amount != 0:
                 crypto_obj.append(crypto)
                 crypto.buy(amount)
-            
-                #print(f"Found no crypto with ticker, '{ticker}'.")
-                #time.sleep(1)
-        
             sub_crypto()
                 
         case 2: #Sell
@@ -243,6 +274,82 @@ def sub_crypto():
 
         case 3:
             main_assets()
+
+def parseStock(ticker):
+    ticker = ticker.upper()
+    # Download webpage using requests
+    URL = f"http://eoddata.com/stocklist/NASDAQ/{ticker[0]}.htm"
+
+    response = requests.get(URL)
+    # Retrieve the HTML document
+    page_contents = response.text
+
+    ## Parse the HTML code using BeautifulSoup library and extract the desired information
+    doc = BeautifulSoup(page_contents, 'html.parser')
+    
+    tr_parent_ro = doc.find_all('tr',{'class':'ro'}) 
+    tr_parent_re = doc.find_all('tr',{'class':'re'})
+
+    found = False
+    for i in range(len(tr_parent_ro)): # Search ro class
+        td_child_ro = tr_parent_ro[i].find_all('td') # Gets the necessary information
+        symbol = td_child_ro[0].find('a').text.strip()
+        if symbol == ticker:
+            name = td_child_ro[1].text.strip()
+            high = td_child_ro[2].text.strip()
+            low = td_child_ro[3].text.strip()
+            close = td_child_ro[4].text.strip()
+            volume = td_child_ro[5].text.strip().replace(',', '') # Here we remove the comma
+            url = "http://eoddata.com/" + td_child_ro[0].find('a')['href'] # Here we append the base url
+            print(symbol, name, high, low, close, volume, url)
+            found = True
+
+    for j in range(len(tr_parent_re)):
+        td_child_re = tr_parent_re[j].find_all('td') # Gets the necessary information
+        symbol = td_child_re[0].find('a').text.strip()
+        if symbol == ticker and found == False:
+            name = td_child_re[1].text.strip()
+            high = td_child_re[2].text.strip()
+            low = td_child_re[3].text.strip()
+            close = td_child_re[4].text.strip()
+            volume = td_child_re[5].text.strip().replace(',', '') # Here we remove the comma
+            url = "http://eoddata.com/" + td_child_re[0].find('a')['href'] # Here we append the base url
+            print(symbol, name, high, low, close, volume, url)
+            found = True
+    
+    if found:
+        return ticker, name, high, low, close, volume, url
+    else:
+        raise ValueError()
+        
+def parseCrypto(ticker):
+    ticker = ticker.upper()
+    URL = f"https://production.api.coindesk.com/v2/tb/price/ticker?assets={ticker}"
+    response = requests.get(URL)
+    
+        
+    json_data = response.json()
+    found = True
+    try:
+        coin_data = json_data['data'][ticker]
+    except:
+        found = False
+            
+    if found:
+        symbol = coin_data['iso'],
+        name = coin_data['name'],
+        open = coin_data['ohlc']['o']
+        high = coin_data['ohlc']['h']
+        low = coin_data['ohlc']['l']
+        close = coin_data['ohlc']['c']
+        circulating_supply = coin_data['circulatingSupply']
+        market_cap = coin_data['marketCap']
+        
+        coin_url = f"https://www.coindesk.com/price/{name[0].lower().replace(' ', '-')}/"
+
+        return symbol[0], name[0], high, low, close, circulating_supply, market_cap, coin_url
+    else:
+        raise ValueError()
 
 if __name__ == "__main__":
     main()
