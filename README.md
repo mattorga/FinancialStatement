@@ -9,7 +9,7 @@ This program keeps track of assets namely (1) stocks and (2) cryptocurrencies. I
 </p>
 
 <p align="center">
-  <img src="Population.png"><br>
+  <img src="Populated.png"><br>
   <em>Populated Assets</em>
 </p>
 
