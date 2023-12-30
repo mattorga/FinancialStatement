@@ -1,5 +1,5 @@
 # Asset Organizer
-#### Video Demo:  <URL HERE>
+#### Video Demo: https://youtu.be/KGOoBc4Z1C4
 #### Description:
 This program keeps track of assets namely (1) stocks and (2) cryptocurrencies. It aiming to provide a way to organize assets in a user-friendly Python program. The program allows the user to "buy" and "sell" assets, which provides a view on important information regarding the state of an asset such as; open, close, high, low, and volume to name a few. The program offers visual interactiveness using via a command-line user interface, and libraries for organizing visualization such as tables. 
 <p align="center">
